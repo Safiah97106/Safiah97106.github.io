@@ -1,0 +1,191 @@
+
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Potato价格计算表</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      padding: 30px;
+      background-color: #f9fafb;
+      color: #333;
+    }
+    h2 {
+      color: #2c3e50;
+      border-left: 5px solid #4b9cdb;
+      padding-left: 10px;
+      margin-top: 40px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+      background-color: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    th, td {
+      border: 1px solid #e1e5eb;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #f1f5f9;
+      font-weight: bold;
+    }
+    input {
+      padding: 6px;
+      width: 80px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      text-align: center;
+    }
+    .highlight-soft { background-color: #fef9e7; }
+    .input-green { background-color: #e9f9e9; }
+    .input-orange { background-color: #fff7ed; }
+    .highlight-yellow { background-color: #fcf8e3; }
+    .result-box {
+      font-weight: bold;
+      color: #c0392b;
+      background-color: #fcf8e3;
+      padding: 12px 20px;
+      margin-top: 15px;
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .section {
+      background-color: #ffffff;
+      padding: 20px;
+      margin-bottom: 40px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    label {
+      display: inline-block;
+      margin: 6px 0;
+      min-width: 130px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="section" style="max-width: 900px; margin: auto;">
+  <h2>Potato价格计算表</h2><h3>方式一：售价计算器（成本 + 人工 + 运费）×利润率 + 预留利润</h3>
+  <label>成本价（元）：<input type="number" id="costPrice" oninput="calculateMethod1()"/></label><br>
+  <label>人工费用（元）：<input class="input-orange" type="number" id="laborCost" oninput="saveDefaults(); calculateMethod1()"/></label><br>
+  <label>国内运费（元）：<input class="input-orange" type="number" id="domesticShipping" oninput="saveDefaults(); calculateMethod1()"/></label><br>
+  <label>利润率（例如1.5）：<input class="input-orange" type="number" id="profitRate" value="1.5" step="0.01" oninput="saveDefaults(); calculateMethod1()"/></label><br>
+  <label>预留利润（元）：<input class="input-orange" type="number" id="extraProfit" oninput="saveDefaults(); calculateMethod1()"/></label><br>
+  <div class="result-box" id="result1">建议售价：-</div>
+</div>
+
+<div class="section" style="max-width: 900px; margin: auto;">
+  <h2>方式二：实际运费计算</h2>
+  <table>
+    <tr>
+      <th class="input-green">称重重量（kg）</th>
+      <th class="input-green">长（cm）</th>
+      <th class="input-green">宽（cm）</th>
+      <th class="input-green">高（cm）</th>
+      <th class="highlight-yellow">体积重量（kg）</th>
+      <th class="input-orange">计抛系数</th>
+      <th class="input-orange">运费单价（元）</th>
+      <th class="input-orange">最低收费（元）</th>
+      <th class="highlight-yellow">运费结果（元）</th>
+    </tr>
+    <tr>
+      <td><input id="weight" class="input-green" type="number" oninput="calcFreight()"/></td>
+      <td><input id="length" class="input-green" type="number" oninput="calcFreight()"/></td>
+      <td><input id="width" class="input-green" type="number" oninput="calcFreight()"/></td>
+      <td><input id="height" class="input-green" type="number" oninput="calcFreight()"/></td>
+      <td id="volWeight" class="highlight-yellow">-</td>
+      <td><input id="ratio" class="input-orange" type="number" value="6000" oninput="calcFreight()"/></td>
+      <td><input id="unitPrice" class="input-orange" type="number" value="1.00" oninput="calcFreight()"/></td>
+      <td><input id="minFee" class="input-orange" type="number" value="10.00" oninput="calcFreight()"/></td>
+      <td id="result" class="highlight-yellow result-box">-</td>
+    </tr>
+  </table>
+  <div class="result-box" id="detailResult2"></div>
+</div>
+
+<div class="section" style="max-width: 900px; margin: auto;">
+  <h2>快递公司计抛系数表</h2>
+  <table>
+    <tr>
+      <th>物流公司</th>
+      <th>计抛系数</th>
+      <th>重量段（kg）</th>
+      <th>备注</th>
+    </tr>
+    <tr><td>极兔快递</td><td>8000</td><td>全部</td><td>-</td></tr>
+    <tr><td>跨越快递</td><td>6000</td><td>全部</td><td>-</td></tr>
+    <tr><td>百世物流</td><td>8000</td><td>≤70</td><td>-</td></tr>
+    <tr><td>百世物流</td><td>5000</td><td>>70</td><td>-</td></tr>
+    <tr><td>中通快递</td><td>8000</td><td>≤50</td><td>超过50kg不收</td></tr>
+    <tr><td>中通快运</td><td>6000</td><td>全部</td><td>-</td></tr>
+    <tr><td>圆通速递</td><td>8000</td><td>≤50</td><td>超过50kg不收</td></tr>
+    <tr><td>天地华宇</td><td>6000</td><td>全部</td><td>-</td></tr>
+    <tr><td>汇森优速</td><td>5000</td><td>全部</td><td>-</td></tr>
+    <tr><td>壹米滴答</td><td>5000</td><td>全部</td><td>-</td></tr>
+  </table>
+</div>
+
+<script>
+  function calculateMethod1() {
+    const cost = parseFloat(document.getElementById('costPrice').value) || 0;
+    const labor = parseFloat(document.getElementById('laborCost').value) || 0;
+    const shipping = parseFloat(document.getElementById('domesticShipping').value) || 0;
+    const profitRate = parseFloat(document.getElementById('profitRate').value) || 1.5;
+    const profit = parseFloat(document.getElementById('extraProfit').value) || 0;
+    const intermediate = (cost + labor + shipping) * profitRate;
+    const finalResult = intermediate + profit;
+    document.getElementById('result1').innerHTML =
+      `建议售价（方式一）为：<strong>${finalResult.toFixed(2)} 元</strong><br>` +
+      `计算过程：(${cost} + ${labor} + ${shipping}) × ${profitRate} + ${profit} = ${intermediate.toFixed(2)} + ${profit} = ${finalResult.toFixed(2)} 元`;
+  }
+
+  function calcFreight() {
+    const weight = parseFloat(document.getElementById('weight').value) || 0;
+    const length = parseFloat(document.getElementById('length').value) || 0;
+    const width = parseFloat(document.getElementById('width').value) || 0;
+    const height = parseFloat(document.getElementById('height').value) || 0;
+    const ratio = parseFloat(document.getElementById('ratio').value) || 6000;
+    const unitPrice = parseFloat(document.getElementById('unitPrice').value) || 1;
+    const minFee = parseFloat(document.getElementById('minFee').value) || 10;
+
+    const volWeight = (length * width * height) / ratio;
+    const weightCost = weight * unitPrice;
+    const volCost = volWeight * unitPrice;
+    const chargeable = Math.max(weight, volWeight);
+    const freight = Math.max(chargeable * unitPrice, minFee);
+
+    document.getElementById('volWeight').innerText = volWeight.toFixed(2) + ' kg';
+    document.getElementById('result').innerText = freight.toFixed(2) + ' 元';
+    document.getElementById('detailResult2').innerHTML =
+      `按称重计费：${weight}kg × ${unitPrice}元 = ${weightCost.toFixed(2)}元<br>` +
+      `按抛重计费：${volWeight.toFixed(2)}kg × ${unitPrice}元 = ${volCost.toFixed(2)}元<br>` +
+      `最终取最大值与最低收费比较：MAX(${chargeable.toFixed(2)}kg × ${unitPrice}元, ${minFee}) = <strong>${freight.toFixed(2)}元</strong>`;
+  }
+
+  function saveDefaults() {
+    localStorage.setItem('laborCost', document.getElementById('laborCost').value);
+    localStorage.setItem('domesticShipping', document.getElementById('domesticShipping').value);
+    localStorage.setItem('extraProfit', document.getElementById('extraProfit').value);
+    localStorage.setItem('profitRate', document.getElementById('profitRate').value);
+  }
+
+  function loadDefaults() {
+    ['laborCost', 'domesticShipping', 'extraProfit', 'profitRate'].forEach(id => {
+      if (localStorage.getItem(id)) {
+        document.getElementById(id).value = localStorage.getItem(id);
+      }
+    });
+    calculateMethod1();
+  }
+
+  window.onload = loadDefaults;
+</script>
+
+</body>
+</html>
